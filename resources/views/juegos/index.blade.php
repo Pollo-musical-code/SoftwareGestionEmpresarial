@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            Mesas {{ $showTrashed ? '(papelera)' : '' }}
+            Juegos {{ $showTrashed ? '(papelera)' : '' }}
         </h2>
     </x-slot>
 
@@ -17,14 +17,14 @@
                 @endif
 
                 <div class="flex flex-wrap gap-4">
-                    @can('crear-mesas')
-                        <a href="{{ route('mesas.create') }}" class="text-amber-700 underline">+ Nueva mesa</a>
+                    @can('crear-juegos')
+                        <a href="{{ route('juegos.create') }}" class="text-amber-700 underline">+ Nuevo juego</a>
                     @endcan
-                    @can('eliminar-mesas')
+                    @can('eliminar-juegos')
                         @if ($showTrashed)
-                            <a href="{{ route('mesas.index') }}" class="text-amber-700 underline">Ver mesas</a>
+                            <a href="{{ route('juegos.index') }}" class="text-amber-700 underline">Ver juegos</a>
                         @else
-                            <a href="{{ route('mesas.index', ['trashed' => 1]) }}" class="text-amber-700 underline">Ver papelera ({{ $trashedCount }})</a>
+                            <a href="{{ route('juegos.index', ['trashed' => 1]) }}" class="text-amber-700 underline">Ver papelera ({{ $trashedCount }})</a>
                         @endif
                     @endcan
                 </div>
@@ -32,38 +32,34 @@
                 <table class="min-w-full text-sm">
                     <thead>
                         <tr class="border-b text-left">
-                            <th class="p-2">ID</th>
-                            <th class="p-2">Juego</th>
+                            <th class="p-2">Nombre</th>
                             <th class="p-2">Apuesta mín.</th>
                             <th class="p-2">Apuesta máx.</th>
+                            <th class="p-2">Mesas</th>
                             <th class="p-2">Estado</th>
                             <th class="p-2">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($mesas as $mesa)
+                        @forelse ($juegos as $juego)
                             <tr class="border-b">
-                                <td class="p-2">{{ $mesa->id }}</td>
-                                <td class="p-2 font-medium">{{ $mesa->juego->nombre }}</td>
-                                <td class="p-2">${{ number_format($mesa->juego->apuesta_min, 0, ',', '.') }}</td>
-                                <td class="p-2">${{ number_format($mesa->juego->apuesta_max, 0, ',', '.') }}</td>
-                                <td class="p-2">
-                                    <span class="px-2 py-1 rounded-full text-xs {{ $mesa->estado === 'abierta' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">
-                                        {{ ucfirst($mesa->estado) }}
-                                    </span>
-                                </td>
+                                <td class="p-2 font-medium">{{ $juego->nombre }}</td>
+                                <td class="p-2">${{ number_format($juego->apuesta_min, 0, ',', '.') }}</td>
+                                <td class="p-2">${{ number_format($juego->apuesta_max, 0, ',', '.') }}</td>
+                                <td class="p-2">{{ $juego->mesas_count }}</td>
+                                <td class="p-2">{{ $juego->activo ? 'Activo' : 'Inactivo' }}</td>
                                 <td class="p-2 space-x-2">
-                                    @if ($mesa->trashed())
-                                        <form method="POST" action="{{ route('mesas.restore', $mesa) }}" class="inline">
+                                    @if ($juego->trashed())
+                                        <form method="POST" action="{{ route('juegos.restore', $juego) }}" class="inline">
                                             @csrf @method('PATCH')
                                             <button type="submit" class="text-green-700 underline">Restaurar</button>
                                         </form>
                                     @else
-                                        @can('editar-mesas')
-                                            <a href="{{ route('mesas.edit', $mesa) }}" class="text-blue-700 underline">Editar</a>
+                                        @can('editar-juegos')
+                                            <a href="{{ route('juegos.edit', $juego) }}" class="text-blue-700 underline">Editar</a>
                                         @endcan
-                                        @can('eliminar-mesas')
-                                            <form method="POST" action="{{ route('mesas.destroy', $mesa) }}" class="inline" onsubmit="return confirm('¿Enviar esta mesa a la papelera?')">
+                                        @can('eliminar-juegos')
+                                            <form method="POST" action="{{ route('juegos.destroy', $juego) }}" class="inline" onsubmit="return confirm('¿Enviar este juego a la papelera?')">
                                                 @csrf @method('DELETE')
                                                 <button type="submit" class="text-red-700 underline">Eliminar</button>
                                             </form>
@@ -72,11 +68,11 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="p-4 text-center text-gray-500">No hay mesas para mostrar.</td></tr>
+                            <tr><td colspan="6" class="p-4 text-center text-gray-500">No hay juegos para mostrar.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
-                {{ $mesas->links() }}
+                {{ $juegos->links() }}
             </div>
         </div>
     </div>
