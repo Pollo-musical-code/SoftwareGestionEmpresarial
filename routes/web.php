@@ -1,37 +1,28 @@
 <?php
 
+use App\Http\Controllers\ClienteController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FichaController;
 use App\Http\Controllers\JuegoController;
 use App\Http\Controllers\MesaController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\VentaController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/dashboard', function () {
-    $user = auth()->user();
-
-    $modules = collect([
-        ['title' => 'Mesas', 'route' => 'mesas.index', 'permission' => 'ver-mesas'],
-        ['title' => 'Juegos', 'route' => 'juegos.index', 'permission' => 'ver-juegos'],
-    ])->filter(fn ($m) => $user->can($m['permission']))->values();
-
-    return view('dashboard', [
-        'roles' => $user->getRoleNames(),
-        'modules' => $modules,
-        'mesasActivas' => $user->can('ver-mesas') ? \App\Models\Mesa::where('estado', 'abierta')->count() : null,
-        'totalClientes' => $user->can('ver-clientes') ? \App\Models\Cliente::count() : null,
-        'fichasCirculacion' => $user->can('ver-clientes') ? \App\Models\Cliente::sum('saldo_fichas') : null,
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', DashboardController::class)
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Mesas (los permisos se validan dentro del controlador)
+    // Mesas
     Route::patch('mesas/{mesa}/restore', [MesaController::class, 'restore'])
         ->withTrashed()
         ->name('mesas.restore');
@@ -42,6 +33,18 @@ Route::middleware('auth')->group(function () {
         ->withTrashed()
         ->name('juegos.restore');
     Route::resource('juegos', JuegoController::class)->except('show');
+
+    // Clientes
+    Route::patch('clientes/{cliente}/restore', [ClienteController::class, 'restore'])
+        ->withTrashed()
+        ->name('clientes.restore');
+    Route::resource('clientes', ClienteController::class)->except('show');
+
+    // Fichas (solo consulta; el stock lo mueven las ventas)
+    Route::get('fichas', [FichaController::class, 'index'])->name('fichas.index');
+
+    // Ventas de fichas
+    Route::resource('ventas', VentaController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
 });
 
 require __DIR__.'/auth.php';

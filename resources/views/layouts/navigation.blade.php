@@ -23,6 +23,21 @@
                             Juegos
                         </x-nav-link>
                     @endcan
+                    @can('ver-clientes')
+                        <x-nav-link :href="route('clientes.index')" :active="request()->routeIs('clientes.*')">
+                            Clientes
+                        </x-nav-link>
+                    @endcan
+                    @can('ver-fichas')
+                        <x-nav-link :href="route('fichas.index')" :active="request()->routeIs('fichas.*')">
+                            Fichas
+                        </x-nav-link>
+                    @endcan
+                    @can('ver-ventas')
+                        <x-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.*')">
+                            Ventas
+                        </x-nav-link>
+                    @endcan
                 </div>
             </div>
 
@@ -80,6 +95,21 @@
             @can('ver-juegos')
                 <x-responsive-nav-link :href="route('juegos.index')" :active="request()->routeIs('juegos.*')">
                     Juegos
+                </x-responsive-nav-link>
+            @endcan
+            @can('ver-clientes')
+                <x-responsive-nav-link :href="route('clientes.index')" :active="request()->routeIs('clientes.*')">
+                    Clientes
+                </x-responsive-nav-link>
+            @endcan
+            @can('ver-fichas')
+                <x-responsive-nav-link :href="route('fichas.index')" :active="request()->routeIs('fichas.*')">
+                    Fichas
+                </x-responsive-nav-link>
+            @endcan
+            @can('ver-ventas')
+                <x-responsive-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.*')">
+                    Ventas
                 </x-responsive-nav-link>
             @endcan
         </div>

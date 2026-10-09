@@ -5,24 +5,25 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Cliente extends Model
+class Ficha extends Model
 {
     use SoftDeletes;
 
     protected $fillable = [
-        'documento', 'nombre', 'fecha_nacimiento', 'nivel_vip', 'saldo_fichas'
+        'denominacion', 'valor', 'stock', 'activo',
     ];
 
     protected function casts(): array
     {
         return [
-            'fecha_nacimiento' => 'date',
-            'saldo_fichas' => 'decimal:2',
+            'valor' => 'decimal:2',
+            'stock' => 'integer',
+            'activo' => 'boolean',
         ];
     }
 
-    public function ventas()
+    public function detalles()
     {
-        return $this->hasMany(Venta::class);
+        return $this->hasMany(VentaDetalle::class);
     }
 }
