@@ -19,6 +19,9 @@ class RolePermissionSeeder extends Seeder
             'ver-clientes', 'crear-clientes', 'editar-clientes', 'eliminar-clientes',
             'ver-fichas',
             'ver-ventas', 'crear-ventas', 'editar-ventas', 'eliminar-ventas',
+            // Clase 10
+            'ver-proveedores', 'crear-proveedores', 'editar-proveedores', 'eliminar-proveedores',
+            'ver-compras', 'crear-compras', 'editar-compras', 'eliminar-compras', 'recibir-compras',
             'ver-reportes',
         ];
 
@@ -28,15 +31,16 @@ class RolePermissionSeeder extends Seeder
 
         Role::findOrCreate('admin')->syncPermissions(Permission::all());
 
-        // Cajero: atiende clientes y vende fichas
+        // Cajero: atiende clientes, vende fichas y recibe las fichas que llegan del proveedor
         Role::findOrCreate('cajero')->syncPermissions([
             'ver-clientes', 'crear-clientes', 'editar-clientes',
             'ver-mesas', 'ver-juegos',
             'ver-fichas',
             'ver-ventas', 'crear-ventas',
+            'ver-proveedores', 'ver-compras', 'recibir-compras',
         ]);
 
-        // Crupier: maneja mesas y juegos, no ve clientes ni ventas
+        // Crupier: maneja mesas y juegos
         Role::findOrCreate('crupier')->syncPermissions([
             'ver-juegos', 'ver-mesas', 'editar-mesas',
         ]);

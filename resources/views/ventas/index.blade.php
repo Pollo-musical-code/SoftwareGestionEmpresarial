@@ -53,6 +53,7 @@
                                 <td class="p-2">{{ ucfirst($venta->estado) }}</td>
                                 <td class="p-2 space-x-2">
                                     <a href="{{ route('ventas.show', $venta) }}" class="text-blue-700 underline">Ver</a>
+                                    <a href="{{ route('ventas.pdf', $venta) }}" target="_blank" class="text-blue-700 underline">PDF</a>
                                     @can('eliminar-ventas')
                                         <form method="POST" action="{{ route('ventas.destroy', $venta) }}" class="inline" onsubmit="return confirm('¿Anular esta venta? Las fichas volverán al stock.')">
                                             @csrf @method('DELETE')

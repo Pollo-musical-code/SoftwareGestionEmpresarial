@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cliente;
+use App\Models\Compra;
 use App\Models\Ficha;
 use App\Models\Mesa;
 use App\Models\Venta;
@@ -16,13 +17,14 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-        // Cada módulo solo aparece si el usuario tiene el permiso
         $modules = collect([
             ['title' => 'Mesas', 'route' => 'mesas.index', 'permission' => 'ver-mesas'],
             ['title' => 'Juegos', 'route' => 'juegos.index', 'permission' => 'ver-juegos'],
             ['title' => 'Clientes', 'route' => 'clientes.index', 'permission' => 'ver-clientes'],
             ['title' => 'Fichas', 'route' => 'fichas.index', 'permission' => 'ver-fichas'],
             ['title' => 'Ventas', 'route' => 'ventas.index', 'permission' => 'ver-ventas'],
+            ['title' => 'Proveedores', 'route' => 'proveedores.index', 'permission' => 'ver-proveedores'],
+            ['title' => 'Compras', 'route' => 'compras.index', 'permission' => 'ver-compras'],
         ])->filter(fn ($m) => $user->can($m['permission']))->values();
 
         $stats = collect();
@@ -54,7 +56,6 @@ class DashboardController extends Controller
                 'value' => '$ '.number_format((float) Venta::whereMonth('fecha_venta', now()->month)->whereYear('fecha_venta', now()->year)->sum('total'), 0, ',', '.'),
             ]);
 
-            // Top 5 fichas más vendidas (sin contar ventas anuladas)
             $topFichas = VentaDetalle::query()
                 ->join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
                 ->join('fichas', 'fichas.id', '=', 'venta_detalles.ficha_id')
@@ -65,7 +66,6 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
 
-            // Top 5 clientes con más compras
             $topClientes = Venta::query()
                 ->join('clientes', 'clientes.id', '=', 'ventas.cliente_id')
                 ->select('clientes.nombre', DB::raw('COUNT(ventas.id) as compras'), DB::raw('SUM(ventas.total) as total'))
@@ -75,12 +75,30 @@ class DashboardController extends Controller
                 ->get();
         }
 
+        // Clase 10: KPIs de compras (abastecimiento)
+        if ($user->can('ver-compras')) {
+            $porRecibir = Compra::whereIn('estado', ['pendiente', 'parcial']);
+
+            $stats->push(['label' => 'Órdenes por recibir', 'value' => (clone $porRecibir)->count()]);
+            $stats->push(['label' => 'Valor por recibir', 'value' => '$ '.number_format((float) (clone $porRecibir)->sum('total'), 0, ',', '.')]);
+            $stats->push([
+                'label' => 'Comprado en el mes',
+                'value' => '$ '.number_format((float) Compra::whereNot('estado', 'anulada')->whereMonth('fecha_compra', now()->month)->whereYear('fecha_compra', now()->year)->sum('total'), 0, ',', '.'),
+            ]);
+        }
+
+        // Tabla accionable: fichas para reabastecer
+        $fichasReabastecer = $user->can('ver-fichas')
+            ? Ficha::where('activo', true)->where('stock', '<=', 5)->orderBy('stock')->get()
+            : collect();
+
         return view('dashboard', [
             'roles' => $user->getRoleNames(),
             'modules' => $modules,
             'stats' => $stats,
             'topFichas' => $topFichas,
             'topClientes' => $topClientes,
+            'fichasReabastecer' => $fichasReabastecer,
         ]);
     }
 }

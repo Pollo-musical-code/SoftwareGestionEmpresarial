@@ -51,7 +51,8 @@
                     <p>IVA (19%): <strong>${{ number_format((float) $venta->impuesto, 0, ',', '.') }}</strong></p>
                     <p class="text-lg">Total: <strong>${{ number_format((float) $venta->total, 0, ',', '.') }}</strong></p>
                 </div>
-
+                
+                <a href="{{ route('ventas.pdf', $venta) }}" target="_blank" class="text-blue-700 underline me-4">Descargar PDF</a>
                 <a href="{{ route('ventas.index') }}" class="underline">Volver al listado</a>
             </div>
         </div>

@@ -26,4 +26,9 @@ class Ficha extends Model
     {
         return $this->hasMany(VentaDetalle::class);
     }
+
+    public function compraDetalles()
+    {
+        return $this->hasMany(CompraDetalle::class);
+    }
 }

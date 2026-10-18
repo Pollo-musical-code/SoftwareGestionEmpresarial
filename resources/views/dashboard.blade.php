@@ -78,6 +78,36 @@
                     </div>
                 </div>
             @endcan
+            
+            @if ($fichasReabastecer->isNotEmpty())
+                <div class="bg-white shadow-sm rounded-lg p-6 border-l-4 border-red-600">
+                    <h3 class="font-semibold mb-3">Fichas para reabastecer</h3>
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="border-b text-left">
+                                <th class="p-2">Ficha</th>
+                                <th class="p-2">Stock</th>
+                                @can('crear-compras')
+                                    <th class="p-2">Acción</th>
+                                @endcan
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($fichasReabastecer as $ficha)
+                                <tr class="border-b">
+                                    <td class="p-2">{{ $ficha->denominacion }}</td>
+                                    <td class="p-2">{{ $ficha->stock }}</td>
+                                    @can('crear-compras')
+                                        <td class="p-2">
+                                            <a href="{{ route('compras.create', ['ficha' => $ficha->id]) }}" class="text-amber-700 underline">Crear compra</a>
+                                        </td>
+                                    @endcan
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
 
             <div class="bg-white shadow-sm sm:rounded-lg p-6">
                 <h3 class="font-semibold mb-3">Módulos disponibles</h3>

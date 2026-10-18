@@ -7,6 +7,7 @@ use App\Models\Cliente;
 use App\Models\Ficha;
 use App\Models\Venta;
 use App\Services\VentaService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -18,7 +19,7 @@ class VentaController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:ver-ventas', only: ['index', 'show']),
+            new Middleware('permission:ver-ventas', only: ['index', 'show', 'pdf']),
             new Middleware('permission:crear-ventas', only: ['create', 'store']),
             new Middleware('permission:eliminar-ventas', only: ['destroy']),
         ];
@@ -30,7 +31,6 @@ class VentaController extends Controller implements HasMiddleware
             ->with(['cliente', 'user'])
             ->when($request->filled('search'), function ($q) use ($request) {
                 $search = '%'.$request->string('search').'%';
-                // El OR va agrupado para no anular los filtros de fecha
                 $q->where(function ($q) use ($search) {
                     $q->where('numero_factura', 'like', $search)
                       ->orWhereHas('cliente', fn ($q) => $q->where('nombre', 'like', $search));
@@ -81,7 +81,6 @@ class VentaController extends Controller implements HasMiddleware
 
     public function destroy(Venta $venta)
     {
-        // Regla de negocio: al anular, las fichas vuelven al stock
         DB::transaction(function () use ($venta) {
             foreach ($venta->detalles as $detalle) {
                 $detalle->ficha?->increment('stock', $detalle->cantidad);
@@ -93,5 +92,15 @@ class VentaController extends Controller implements HasMiddleware
 
         return redirect()->route('ventas.index')
             ->with('success', "Venta «{$venta->numero_factura}» anulada y fichas devueltas al stock.");
+    }
+
+    // Clase 10: factura de venta en PDF
+    public function pdf(Venta $venta)
+    {
+        $venta->load(['cliente', 'user', 'detalles.ficha']);
+
+        return Pdf::loadView('pdf.venta', ['venta' => $venta])
+            ->setPaper('letter')
+            ->stream("{$venta->numero_factura}.pdf");
     }
 }
