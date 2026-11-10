@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\CompraController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FichaController;
+use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\JuegoController;
 use App\Http\Controllers\MesaController;
 use App\Http\Controllers\ProfileController;
@@ -46,18 +48,27 @@ Route::middleware('auth')->group(function () {
     Route::get('ventas/{venta}/pdf', [VentaController::class, 'pdf'])->name('ventas.pdf');
     Route::resource('ventas', VentaController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
 
-    // Proveedores (Clase 10)
-    // OJO: Laravel singulariza "proveedores" como "proveedore"; parameters() lo corrige a "proveedor"
+    // Proveedores
     Route::patch('proveedores/{proveedor}/restore', [ProveedorController::class, 'restore'])
         ->withTrashed()->name('proveedores.restore');
     Route::resource('proveedores', ProveedorController::class)
         ->parameters(['proveedores' => 'proveedor'])
         ->except('show');
 
-    // Compras (Clase 10)
+    // Compras
     Route::patch('compras/{compra}/receive', [CompraController::class, 'receive'])->name('compras.receive');
     Route::get('compras/{compra}/pdf', [CompraController::class, 'pdf'])->name('compras.pdf');
     Route::resource('compras', CompraController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
+
+    // Inventario: kardex y ajustes (Clase 12)
+    Route::get('inventario/kardex', [InventarioController::class, 'kardex'])->name('inventario.kardex');
+    Route::get('inventario/kardex/{ficha}/pdf', [InventarioController::class, 'pdf'])
+        ->withTrashed()->name('inventario.pdf');
+    Route::get('inventario/{ficha}/ajustar', [InventarioController::class, 'ajustar'])->name('inventario.ajustar');
+    Route::post('inventario/{ficha}/ajustar', [InventarioController::class, 'guardarAjuste'])->name('inventario.ajustar.guardar');
+
+    // Auditoría (Clase 12)
+    Route::get('auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
 });
 
 require __DIR__.'/auth.php';

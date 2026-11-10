@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Compra;
-use App\Models\Ficha;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -11,8 +10,11 @@ class CompraService
 {
     public const TASA_IMPUESTO = 0.19;
 
+    // El stock lo mueve el InventarioService (kardex)
+    public function __construct(private InventarioService $inventario) {}
+
     /**
-     * Registra una ORDEN DE COMPRA (estado "pendiente"). NO mueve el stock:
+     * Registra una ORDEN DE COMPRA (estado «pendiente»). NO mueve el stock:
      * las fichas solo se suman cuando llegan (método recibir).
      */
     public function registrar(array $data, int $userId): Compra
@@ -59,14 +61,14 @@ class CompraService
     }
 
     /**
-     * Registra la RECEPCIÓN (total o parcial) y AUMENTA el stock de fichas.
+     * Registra la RECEPCIÓN (total o parcial) y AUMENTA el stock por el kardex.
      *
      * @param array $cantidades [id_del_detalle => cantidad_que_llega, ...]
      */
     public function recibir(Compra $compra, array $cantidades, ?string $facturaProveedor = null): Compra
     {
         return DB::transaction(function () use ($compra, $cantidades, $facturaProveedor) {
-            // Bloqueo: dos cajeros no pueden recibir la misma orden a la vez
+            // Bloqueo: dos usuarios no pueden recibir la misma orden a la vez
             $compra = Compra::lockForUpdate()->findOrFail($compra->id);
             $compra->load('detalles.ficha');
 
@@ -104,10 +106,14 @@ class CompraService
 
                 $detalle->increment('cantidad_recibida', $cantidad);
 
-                Ficha::withTrashed()
-                    ->lockForUpdate()
-                    ->findOrFail($detalle->ficha_id)
-                    ->increment('stock', $cantidad);
+                // Entrada de inventario con su movimiento en el kardex
+                $this->inventario->entrada(
+                    $detalle->ficha,
+                    $cantidad,
+                    'compra',
+                    $compra,
+                    (float) $detalle->costo_unitario
+                );
 
                 $recibioAlgo = true;
             }
@@ -119,7 +125,6 @@ class CompraService
                 ]);
             }
 
-            // Recalcular el estado de la orden
             $compra->load('detalles');
             $completa = $compra->detalles->every(fn ($d) => $d->cantidad_recibida >= $d->cantidad);
 
@@ -134,7 +139,7 @@ class CompraService
     }
 
     /**
-     * Anula una orden. Regla: solo si NO ha llegado nada (estado "pendiente").
+     * Anula una orden. Regla: solo si NO ha llegado nada (estado «pendiente»).
      */
     public function anular(Compra $compra): void
     {

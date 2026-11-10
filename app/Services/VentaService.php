@@ -9,8 +9,10 @@ use Illuminate\Validation\ValidationException;
 
 class VentaService
 {
-    // IVA del 19% (como pide la guía del curso)
     public const TASA_IMPUESTO = 0.19;
+
+    // El stock lo mueve el InventarioService (kardex)
+    public function __construct(private InventarioService $inventario) {}
 
     /**
      * Registra una venta completa dentro de una transacción.
@@ -21,7 +23,7 @@ class VentaService
     public function registrar(array $data, int $userId): Venta
     {
         return DB::transaction(function () use ($data, $userId) {
-            // 0. Agrupar cantidades por ficha (si la misma ficha se agregó en dos filas)
+            // 0. Agrupar cantidades por ficha (si se agregó en dos filas)
             $cantidades = [];
             foreach ($data['items'] as $item) {
                 $cantidades[$item['ficha_id']] = ($cantidades[$item['ficha_id']] ?? 0) + (int) $item['cantidad'];
@@ -32,7 +34,6 @@ class VentaService
             $subtotal = 0;
 
             foreach ($cantidades as $fichaId => $cantidad) {
-                // lockForUpdate(): bloquea la fila hasta terminar la transacción
                 $ficha = Ficha::lockForUpdate()->findOrFail($fichaId);
 
                 if (! $ficha->activo) {
@@ -61,7 +62,7 @@ class VentaService
             $impuesto = round($subtotal * self::TASA_IMPUESTO, 2);
             $total = round($subtotal + $impuesto, 2);
 
-            // 2. Crear la cabecera de la venta
+            // 2. Cabecera de la venta
             $venta = Venta::create([
                 'numero_factura' => $this->siguienteNumeroFactura(),
                 'cliente_id' => $data['cliente_id'],
@@ -74,7 +75,7 @@ class VentaService
                 'notas' => $data['notas'] ?? null,
             ]);
 
-            // 3. Crear los detalles y descontar el stock
+            // 3. Detalles y salida de inventario por el kardex
             foreach ($lineas as $linea) {
                 $venta->detalles()->create([
                     'ficha_id' => $linea['ficha']->id,
@@ -83,14 +84,44 @@ class VentaService
                     'subtotal' => $linea['subtotal'],
                 ]);
 
-                $linea['ficha']->decrement('stock', $linea['cantidad']);
+                $this->inventario->salida(
+                    $linea['ficha'], $linea['cantidad'], 'venta', $venta, (float) $linea['valor_unitario']
+                );
             }
 
             return $venta;
         });
     }
 
-    // Genera el siguiente número de factura: FV-00001, FV-00002, ...
+    /**
+     * Anula una venta: las fichas regresan al inventario (entrada «anulacion_venta» en el kardex).
+     */
+    public function anular(Venta $venta): void
+    {
+        if ($venta->estado === 'anulada') {
+            throw ValidationException::withMessages([
+                'venta' => "La venta {$venta->numero_factura} ya está anulada.",
+            ]);
+        }
+
+        DB::transaction(function () use ($venta) {
+            foreach ($venta->detalles as $detalle) {
+                $this->inventario->entrada(
+                    $detalle->ficha,
+                    $detalle->cantidad,
+                    'anulacion_venta',
+                    $venta,
+                    (float) $detalle->valor_unitario,
+                    "Anulación de la venta {$venta->numero_factura}"
+                );
+            }
+
+            $venta->update(['estado' => 'anulada']);
+            $venta->delete();
+        });
+    }
+
+    // FV-00001, FV-00002, ...
     private function siguienteNumeroFactura(): string
     {
         $ultima = Venta::withTrashed()->orderByDesc('id')->first();

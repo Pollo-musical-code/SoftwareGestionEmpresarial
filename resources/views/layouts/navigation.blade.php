@@ -48,6 +48,16 @@
                             Compras
                         </x-nav-link>
                     @endcan
+                    @can('ver-inventario')
+                        <x-nav-link :href="route('inventario.kardex')" :active="request()->routeIs('inventario.*')">
+                            Kardex
+                        </x-nav-link>
+                    @endcan
+                    @can('ver-auditoria')
+                        <x-nav-link :href="route('auditoria.index')" :active="request()->routeIs('auditoria.*')">
+                            Auditoría
+                        </x-nav-link>
+                    @endcan
                 </div>
             </div>
 
@@ -130,6 +140,16 @@
             @can('ver-compras')
                 <x-responsive-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.*')">
                     Compras
+                </x-responsive-nav-link>
+            @endcan
+            @can('ver-inventario')
+                <x-responsive-nav-link :href="route('inventario.kardex')" :active="request()->routeIs('inventario.*')">
+                    Kardex
+                </x-responsive-nav-link>
+            @endcan
+            @can('ver-auditoria')
+                <x-responsive-nav-link :href="route('auditoria.index')" :active="request()->routeIs('auditoria.*')">
+                    Auditoría
                 </x-responsive-nav-link>
             @endcan
         </div>

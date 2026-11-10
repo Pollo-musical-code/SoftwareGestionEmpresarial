@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Venta extends Model
 {
-    use SoftDeletes;
+    use Auditable, SoftDeletes;
+
+    protected string $auditLog = 'ventas';
 
     protected $fillable = [
         'numero_factura', 'cliente_id', 'user_id', 'fecha_venta',

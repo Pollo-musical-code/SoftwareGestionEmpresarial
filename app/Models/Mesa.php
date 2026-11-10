@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Mesa extends Model
 {
-    use SoftDeletes;
+    use Auditable, SoftDeletes;
+
+    protected string $auditLog = 'mesas';
 
     protected $fillable = [
         'juego_id', 'estado'
     ];
 
-    // Relación: una Mesa pertenece a un Juego (incluso si el juego está en la papelera)
     public function juego()
     {
         return $this->belongsTo(Juego::class)->withTrashed();

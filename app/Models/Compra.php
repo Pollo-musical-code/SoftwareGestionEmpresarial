@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Compra extends Model
 {
-    use SoftDeletes;
+    use Auditable, SoftDeletes;
+
+    protected string $auditLog = 'compras';
 
     protected $fillable = [
         'numero_compra', 'proveedor_id', 'user_id', 'fecha_compra', 'factura_proveedor',
@@ -40,13 +43,11 @@ class Compra extends Model
         return $this->hasMany(CompraDetalle::class);
     }
 
-    // ¿Todavía se pueden recibir fichas de esta orden?
     public function puedeRecibirse(): bool
     {
         return in_array($this->estado, ['pendiente', 'parcial']);
     }
 
-    // Regla: solo se anula una orden a la que no ha llegado nada
     public function puedeAnularse(): bool
     {
         return $this->estado === 'pendiente';

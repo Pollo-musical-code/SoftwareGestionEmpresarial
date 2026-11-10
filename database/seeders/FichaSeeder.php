@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Ficha;
+use App\Services\InventarioService;
 use Illuminate\Database\Seeder;
 
 class FichaSeeder extends Seeder
@@ -14,13 +15,17 @@ class FichaSeeder extends Seeder
             ['denominacion' => 'Ficha $5.000',   'valor' => 5000,   'stock' => 400],
             ['denominacion' => 'Ficha $10.000',  'valor' => 10000,  'stock' => 300],
             ['denominacion' => 'Ficha $50.000',  'valor' => 50000,  'stock' => 200],
-            // Stock bajo a propósito: sirve para probar el error de "stock insuficiente"
+            // Stock bajo a propósito: sirve para probar el error de «stock insuficiente»
             ['denominacion' => 'Ficha $100.000', 'valor' => 100000, 'stock' => 4],
         ];
 
-        // firstOrCreate: si la ficha ya existe no la duplica (se puede ejecutar varias veces)
-        foreach ($fichas as $ficha) {
-            Ficha::firstOrCreate(['valor' => $ficha['valor']], $ficha + ['activo' => true]);
+        foreach ($fichas as $datos) {
+            $ficha = Ficha::firstOrCreate(['valor' => $datos['valor']], $datos + ['activo' => true]);
+
+            // El stock inicial queda como primer movimiento del kardex
+            if ($ficha->wasRecentlyCreated) {
+                app(InventarioService::class)->apertura($ficha);
+            }
         }
     }
 }
