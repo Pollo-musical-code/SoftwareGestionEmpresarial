@@ -182,3 +182,138 @@ public function juego() { return $this->belongsTo(Juego::class); }
 ## Integrantes
 
 - Completar con los nombres del grupo
+
+---
+
+## Datos del proyecto
+
+- **Proyecto:** Casino Fortuna S.A.S. (empresa simulada) — ERP para un casino: mesas, fichas, clientes, caja, compras, inventario y auditoría.
+- **Asignatura:** Software de Gestión Empresarial — COTECNOVA 2026 — **Grupo 9**
+- **Docente:** Jhon James Cano
+- **Integrantes:** Cristian David Zuleta · Bryan Cárdenas
+- **Repositorio:** https://github.com/Pollo-musical-code/SoftwareGestionEmpresarial
+- **Versión entregada:** etiqueta `final`
+
+---
+
+## Guía para el docente: cómo ver y ejecutar el proyecto
+
+Hay dos formas de revisarlo. La **Opción A** no instala nada; la **Opción B** lo ejecuta en su computador.
+
+### Opción A — Ver el código y la evidencia directamente en GitHub (sin instalar nada)
+
+1. Abra https://github.com/Pollo-musical-code/SoftwareGestionEmpresarial
+2. Para ver exactamente la versión entregada, pulse el menú de ramas (dice `master`), abra la pestaña **Tags** y elija **`final`**.
+3. Dónde está cada parte del código:
+
+| Qué busca | Dónde está |
+|---|---|
+| Reglas de negocio (venta, compra, inventario) | `app/Services/` |
+| Controladores y rutas | `app/Http/Controllers/`, `routes/web.php`, `routes/api.php` |
+| Roles, rol activo, permisos directos y matriz | `app/Services/AccessControlService.php`, `app/Models/Concerns/HasActiveRole.php`, `app/Http/Controllers/Settings/` |
+| API REST v1 (Sanctum) | `app/Http/Controllers/Api/V1/`, `routes/api.php` |
+| Excel (exportar / importar con validación) | `app/Exports/`, `app/Imports/` |
+| Eventos, listeners y notificaciones | `app/Events/`, `app/Listeners/`, `app/Notifications/`, `app/Observers/` |
+| Tarea programada | `app/Console/Commands/EnviarResumenDiario.php`, `routes/console.php` |
+| Pruebas automatizadas | `tests/` |
+| Integración continua | `.github/workflows/pruebas.yml` y la pestaña **Actions** del repositorio |
+
+4. En la pestaña **Actions** puede ver la ejecución de las pruebas (debe aparecer en verde).
+
+### Opción B — Ejecutarlo en su computador (Docker + Laravel Sail)
+
+No necesita instalar PHP, Composer, MySQL ni Node: todo corre dentro de contenedores Docker.
+
+**Requisitos:** Git y Docker Desktop. En Windows además WSL2 con Ubuntu.
+
+**Solo Windows (una vez):**
+1. Abra PowerShell como administrador y ejecute `wsl --install`; reinicie el equipo.
+2. Instale Docker Desktop (https://www.docker.com/products/docker-desktop/).
+3. En Docker Desktop: *Settings → Resources → WSL Integration* → active **Ubuntu**.
+4. Abra la aplicación **Ubuntu** desde el menú Inicio. Todos los comandos siguientes se escriben en esa terminal (en macOS o Linux, en la terminal normal).
+
+**Paso a paso:**
+
+1. Clonar el proyecto (en la carpeta personal, no en `/mnt/c`):
+   ```bash
+   cd ~
+   git clone https://github.com/Pollo-musical-code/SoftwareGestionEmpresarial.git casino
+   cd casino
+   git checkout final
+   ```
+2. Instalar las dependencias de PHP usando un contenedor temporal (aún no existe la carpeta `vendor`):
+   ```bash
+   docker run --rm -u "$(id -u):$(id -g)" -v "$(pwd):/var/www/html" -w /var/www/html \
+     laravelsail/php84-composer:latest composer install --ignore-platform-reqs --no-interaction
+   ```
+3. Crear el archivo de configuración:
+   ```bash
+   cp .env.example .env
+   ```
+4. Levantar los contenedores (la primera vez tarda varios minutos porque construye la imagen):
+   ```bash
+   ./vendor/bin/sail up -d
+   ```
+5. Generar la llave de la aplicación:
+   ```bash
+   ./vendor/bin/sail artisan key:generate
+   ```
+6. Crear las tablas y cargar los datos de demostración (usuarios por rol, juegos, mesas, clientes, fichas, proveedores y kardex inicial):
+   ```bash
+   ./vendor/bin/sail artisan migrate --seed
+   ```
+7. Instalar y compilar los estilos:
+   ```bash
+   ./vendor/bin/sail npm install
+   ./vendor/bin/sail npm run build
+   ```
+8. Abrir en el navegador: **http://localhost:9090** e iniciar sesión con alguno de los usuarios de la tabla siguiente.
+
+**Usuarios de demostración** (contraseña de todos: `password`)
+
+| Rol | Correo | Qué puede hacer |
+|---|---|---|
+| Administrador | admin@casino.test | Todo, incluida la configuración de usuarios, roles y permisos |
+| Supervisor de sala | supervisor@casino.test | Audita, anula ventas, exporta a Excel |
+| Cajero | cajero@casino.test | Clientes, venta de fichas, recepción de compras |
+| Crupier | crupier@casino.test | Opera las mesas |
+| Cajero + crupier | multi@casino.test | Tiene dos roles: al entrar elige su **rol activo** |
+| Crupier inactivo | inactivo@casino.test | No puede iniciar sesión (usuario desactivado) |
+
+**Recorrido sugerido (5 minutos):**
+1. Entrar como `multi@casino.test`: el sistema pide elegir el rol activo; con *crupier* no aparece Clientes, con *cajero* sí.
+2. Entrar como `admin@casino.test` → **Usuarios**, **Roles** y **Matriz de permisos** (menú lateral).
+3. **Venta de fichas** → nueva venta → luego anularla; revisar **Kardex de fichas** y **Auditoría**.
+4. **Compras de fichas** → recibir una compra (suma al inventario).
+5. **Exportar clientes** / **Importar clientes** (hay plantilla descargable).
+6. Correos de las alertas: http://localhost:8025 (Mailpit). Para procesar la cola de notificaciones, en otra terminal: `./vendor/bin/sail artisan queue:work`.
+
+**Correr las pruebas automatizadas:**
+```bash
+./vendor/bin/sail artisan test
+./vendor/bin/sail bin pint --test
+```
+
+**Probar la API REST** (rutas bajo `/api/v1`):
+```bash
+curl -s -X POST http://localhost:9090/api/v1/login \
+  -H "Accept: application/json" \
+  -d "email=cajero@casino.test&password=password"
+```
+Devuelve un token; úselo con `-H "Authorization: Bearer <token>"` en `GET /api/v1/clientes`, `/fichas`, `/ventas`, `/mesas` y `/me`.
+
+**Detener y limpiar:**
+```bash
+./vendor/bin/sail down        # detiene los contenedores
+./vendor/bin/sail down -v     # además borra la base de datos
+```
+
+**Problemas frecuentes**
+
+| Síntoma | Solución |
+|---|---|
+| `Cannot connect to the Docker daemon` | Abra Docker Desktop y espere a que diga "running". |
+| El puerto 9090, 3306 u 8025 ya está en uso | Cierre el programa que lo usa, o cambie `APP_PORT`, `FORWARD_DB_PORT` o `FORWARD_MAILPIT_DASHBOARD_PORT` en `.env` y repita `sail up -d`. |
+| `vendor/bin/sail: No such file` | Falló el paso 2; repítalo. |
+| Página sin estilos | Repita el paso 7. |
+| Quiere reiniciar los datos de demostración | `./vendor/bin/sail artisan migrate:fresh --seed` |
