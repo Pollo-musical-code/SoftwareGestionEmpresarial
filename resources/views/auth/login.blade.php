@@ -1,18 +1,16 @@
 <x-guest-layout>
-    <div class="mb-4 text-center">
-        <h2 class="text-xl font-semibold text-gray-800">Iniciar sesión</h2>
-        <p class="text-sm text-gray-500">Bienvenido de nuevo a Casino Fortuna</p>
+    <div class="mb-6">
+        <h2 class="font-display text-2xl font-bold text-ink">Iniciar sesión</h2>
+        <p class="mt-1 text-sm text-slate-500">Ingresa con tu correo y contraseña para entrar al sistema.</p>
     </div>
 
     @if (session('status'))
-        <div class="mb-4 text-sm font-medium text-green-600">
-            {{ session('status') }}
-        </div>
+        <div class="mb-4 text-sm font-medium text-green-600">{{ session('status') }}</div>
     @endif
 
     @if ($errors->any())
-        <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-            <ul class="list-disc list-inside">
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <ul class="list-inside list-disc">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -20,38 +18,29 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('login') }}">
+    <form method="POST" action="{{ route('login') }}" class="space-y-4">
         @csrf
 
         <div>
-            <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
-            <input id="email" type="email" name="email" value="{{ old('email') }}" required autofocus
-                class="block mt-1 w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
+            <x-input-label for="email" value="Correo electrónico" />
+            <x-text-input id="email" type="email" name="email" :value="old('email')" class="mt-1 block w-full" required autofocus />
         </div>
 
-        <div class="mt-4">
-            <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
-            <input id="password" type="password" name="password" required autocomplete="current-password"
-                class="block mt-1 w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
+        <div>
+            <x-input-label for="password" value="Contraseña" />
+            <x-text-input id="password" type="password" name="password" class="mt-1 block w-full" required autocomplete="current-password" />
         </div>
 
-        <div class="block mt-4">
-            <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" name="remember" class="rounded border-gray-300 text-amber-600 focus:ring-amber-500">
-                <span class="ms-2 text-sm text-gray-600">Recordarme</span>
-            </label>
-        </div>
+        <label for="remember_me" class="inline-flex items-center">
+            <input id="remember_me" type="checkbox" name="remember" class="rounded border-slate-300 text-brand focus:ring-brand">
+            <span class="ms-2 text-sm text-slate-600">Recordarme</span>
+        </label>
 
-        <div class="flex items-center justify-end mt-4">
+        <div class="flex items-center justify-between pt-2">
             @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900" href="{{ route('password.request') }}">
-                    ¿Olvidaste tu contraseña?
-                </a>
+                <a class="text-sm text-slate-600 underline hover:text-slate-900" href="{{ route('password.request') }}">¿Olvidaste tu contraseña?</a>
             @endif
-
-            <button type="submit" class="ms-4 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">
-                Entrar
-            </button>
+            <x-primary-button class="ms-auto">Entrar</x-primary-button>
         </div>
     </form>
 </x-guest-layout>

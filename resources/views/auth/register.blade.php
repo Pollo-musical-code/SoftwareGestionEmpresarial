@@ -1,12 +1,12 @@
 <x-guest-layout>
-    <div class="mb-4 text-center">
-        <h2 class="text-xl font-semibold text-gray-800">Crear cuenta</h2>
-        <p class="text-sm text-gray-500">Únete al sistema de gestión de Casino Fortuna</p>
+    <div class="mb-6">
+        <h2 class="font-display text-2xl font-bold text-ink">Crear cuenta</h2>
+        <p class="mt-1 text-sm text-slate-500">Regístrate para usar el sistema de gestión de {{ $branding->trade_name }}.</p>
     </div>
 
     @if ($errors->any())
-        <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-            <ul class="list-disc list-inside">
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+            <ul class="list-inside list-disc">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
@@ -14,41 +14,32 @@
         </div>
     @endif
 
-    <form method="POST" action="{{ route('register') }}">
+    <form method="POST" action="{{ route('register') }}" class="space-y-4">
         @csrf
 
         <div>
-            <label for="name" class="block text-sm font-medium text-gray-700">Nombre</label>
-            <input id="name" type="text" name="name" value="{{ old('name') }}" required autofocus
-                class="block mt-1 w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
+            <x-input-label for="name" value="Nombre" />
+            <x-text-input id="name" type="text" name="name" :value="old('name')" class="mt-1 block w-full" required autofocus />
         </div>
 
-        <div class="mt-4">
-            <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
-            <input id="email" type="email" name="email" value="{{ old('email') }}" required
-                class="block mt-1 w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
+        <div>
+            <x-input-label for="email" value="Correo electrónico" />
+            <x-text-input id="email" type="email" name="email" :value="old('email')" class="mt-1 block w-full" required />
         </div>
 
-        <div class="mt-4">
-            <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
-            <input id="password" type="password" name="password" required autocomplete="new-password"
-                class="block mt-1 w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
+        <div>
+            <x-input-label for="password" value="Contraseña" />
+            <x-text-input id="password" type="password" name="password" class="mt-1 block w-full" required autocomplete="new-password" />
         </div>
 
-        <div class="mt-4">
-            <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirmar contraseña</label>
-            <input id="password_confirmation" type="password" name="password_confirmation" required
-                class="block mt-1 w-full rounded-lg border-gray-300 focus:border-amber-500 focus:ring-amber-500">
+        <div>
+            <x-input-label for="password_confirmation" value="Confirmar contraseña" />
+            <x-text-input id="password_confirmation" type="password" name="password_confirmation" class="mt-1 block w-full" required />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900" href="{{ route('login') }}">
-                ¿Ya tienes una cuenta?
-            </a>
-
-            <button type="submit" class="ms-4 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700">
-                Registrarme
-            </button>
+        <div class="flex items-center justify-between pt-2">
+            <a class="text-sm text-slate-600 underline hover:text-slate-900" href="{{ route('login') }}">¿Ya tienes una cuenta?</a>
+            <x-primary-button>Registrarme</x-primary-button>
         </div>
     </form>
 </x-guest-layout>

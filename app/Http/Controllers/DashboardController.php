@@ -16,74 +16,182 @@ class DashboardController extends Controller
     public function __invoke(Request $request)
     {
         $user = $request->user();
+        $peso = fn ($n) => '$'.number_format((float) $n, 0, ',', '.');
 
+        // Accesos rápidos: cada módulo solo aparece si el usuario tiene el permiso
         $modules = collect([
-            ['title' => 'Mesas', 'route' => 'mesas.index', 'permission' => 'ver-mesas'],
-            ['title' => 'Juegos', 'route' => 'juegos.index', 'permission' => 'ver-juegos'],
-            ['title' => 'Clientes', 'route' => 'clientes.index', 'permission' => 'ver-clientes'],
-            ['title' => 'Fichas', 'route' => 'fichas.index', 'permission' => 'ver-fichas'],
-            ['title' => 'Ventas', 'route' => 'ventas.index', 'permission' => 'ver-ventas'],
-            ['title' => 'Proveedores', 'route' => 'proveedores.index', 'permission' => 'ver-proveedores'],
-            ['title' => 'Compras', 'route' => 'compras.index', 'permission' => 'ver-compras'],
+            ['title' => 'Mesas de juego', 'description' => 'Qué mesas están abiertas y con qué juego.', 'route' => 'mesas.index', 'permission' => 'ver-mesas', 'icon' => 'table'],
+            ['title' => 'Juegos', 'description' => 'Ruleta, blackjack y demás, con sus límites de apuesta.', 'route' => 'juegos.index', 'permission' => 'ver-juegos', 'icon' => 'dice'],
+            ['title' => 'Clientes', 'description' => 'Jugadores registrados y su nivel VIP.', 'route' => 'clientes.index', 'permission' => 'ver-clientes', 'icon' => 'users'],
+            ['title' => 'Venta de fichas', 'description' => 'Vende fichas en caja y genera la factura.', 'route' => 'ventas.index', 'permission' => 'ver-ventas', 'icon' => 'cart'],
+            ['title' => 'Fichas en caja', 'description' => 'Cuántas fichas quedan de cada denominación.', 'route' => 'fichas.index', 'permission' => 'ver-fichas', 'icon' => 'chip'],
+            ['title' => 'Compras de fichas', 'description' => 'Pide fichas a los proveedores y recíbelas.', 'route' => 'compras.index', 'permission' => 'ver-compras', 'icon' => 'truck'],
         ])->filter(fn ($m) => $user->can($m['permission']))->values();
 
         $stats = collect();
+        $charts = collect();
 
+        // --- Sala de juegos ---
         if ($user->can('ver-mesas')) {
-            $stats->push(['label' => 'Mesas abiertas', 'value' => Mesa::where('estado', 'abierta')->count()]);
+            $totalMesas = Mesa::count();
+            $stats->push([
+                'label' => 'Mesas abiertas',
+                'value' => Mesa::where('estado', 'abierta')->count(),
+                'hint' => "de {$totalMesas} mesa(s) en total",
+                'icon' => 'table',
+                'tone' => 'green',
+            ]);
+
+            $abiertas = Mesa::where('estado', 'abierta')->count();
+            $cerradas = Mesa::where('estado', 'cerrada')->count();
+            if ($abiertas + $cerradas > 0) {
+                $charts->push([
+                    'id' => 'mesas-estado',
+                    'title' => 'Estado de las mesas',
+                    'subtitle' => 'Cuántas mesas están jugando ahora y cuántas están cerradas.',
+                    'type' => 'doughnut',
+                    'labels' => ['Abiertas', 'Cerradas'],
+                    'colors' => ['#15803d', '#94a3b8'],
+                    'datasets' => [['data' => [$abiertas, $cerradas]]],
+                ]);
+            }
         }
 
+        // --- Clientes ---
         if ($user->can('ver-clientes')) {
-            $stats->push(['label' => 'Clientes registrados', 'value' => Cliente::count()]);
-            $stats->push(['label' => 'Saldo de fichas de clientes', 'value' => '$ '.number_format((float) Cliente::sum('saldo_fichas'), 0, ',', '.')]);
+            $stats->push(['label' => 'Clientes registrados', 'value' => Cliente::count(), 'hint' => 'jugadores en la base de datos', 'icon' => 'users', 'tone' => 'blue']);
+            $stats->push([
+                'label' => 'Saldo de fichas de clientes',
+                'value' => $peso(Cliente::sum('saldo_fichas')),
+                'hint' => 'lo que los clientes tienen en fichas',
+                'icon' => 'banknotes',
+                'tone' => 'gold',
+            ]);
         }
 
+        // --- Fichas (inventario de caja) ---
         if ($user->can('ver-fichas')) {
-            $stats->push(['label' => 'Fichas con stock bajo (≤ 5)', 'value' => Ficha::where('activo', true)->where('stock', '<=', 5)->count()]);
-            $stats->push(['label' => 'Valor de fichas en caja', 'value' => '$ '.number_format((float) Ficha::where('activo', true)->sum(DB::raw('valor * stock')), 0, ',', '.')]);
+            $stats->push([
+                'label' => 'Fichas con stock bajo',
+                'value' => Ficha::where('activo', true)->where('stock', '<=', 5)->count(),
+                'hint' => 'denominaciones con 5 unidades o menos',
+                'icon' => 'alert',
+                'tone' => 'red',
+            ]);
+            $stats->push([
+                'label' => 'Valor de fichas en caja',
+                'value' => $peso(Ficha::where('activo', true)->sum(DB::raw('valor * stock'))),
+                'hint' => 'suma de valor × unidades disponibles',
+                'icon' => 'chip',
+                'tone' => 'brand',
+            ]);
+
+            $fichas = Ficha::where('activo', true)->orderBy('valor')->get(['denominacion', 'valor', 'stock']);
+            if ($fichas->isNotEmpty()) {
+                $charts->push([
+                    'id' => 'stock-fichas',
+                    'title' => 'Fichas disponibles en caja',
+                    'subtitle' => 'Unidades que quedan de cada ficha. Con el color de la ficha real.',
+                    'type' => 'bar',
+                    'labels' => $fichas->pluck('denominacion')->all(),
+                    'colors' => $fichas->map(fn ($f) => Ficha::paletaChip((float) $f->valor)[0])->all(),
+                    'datasets' => [['label' => 'Unidades', 'data' => $fichas->pluck('stock')->all()]],
+                ]);
+            }
         }
 
-        $topFichas = collect();
-        $topClientes = collect();
-
+        // --- Ventas ---
         if ($user->can('ver-ventas')) {
+            $ventasMes = Venta::whereMonth('fecha_venta', now()->month)->whereYear('fecha_venta', now()->year);
             $stats->push([
-                'label' => 'Ventas del mes',
-                'value' => Venta::whereMonth('fecha_venta', now()->month)->whereYear('fecha_venta', now()->year)->count(),
-            ]);
-            $stats->push([
-                'label' => 'Total vendido del mes',
-                'value' => '$ '.number_format((float) Venta::whereMonth('fecha_venta', now()->month)->whereYear('fecha_venta', now()->year)->sum('total'), 0, ',', '.'),
+                'label' => 'Vendido en el mes',
+                'value' => $peso((clone $ventasMes)->sum('total')),
+                'hint' => (clone $ventasMes)->count().' factura(s) este mes',
+                'icon' => 'cart',
+                'tone' => 'brand',
             ]);
 
-            $topFichas = VentaDetalle::query()
+            // Ventas de los últimos 14 días
+            $desde = now()->subDays(13)->startOfDay();
+            $porDia = Venta::whereDate('fecha_venta', '>=', $desde->toDateString())
+                ->selectRaw('DATE(fecha_venta) as dia, SUM(total) as total')
+                ->groupBy('dia')
+                ->pluck('total', 'dia');
+            $dias = collect(range(0, 13))->map(fn ($i) => $desde->copy()->addDays($i));
+
+            $charts->push([
+                'id' => 'ventas-dia',
+                'title' => 'Ventas de los últimos 14 días',
+                'subtitle' => 'Cuánto se vendió en fichas cada día (sin contar ventas anuladas).',
+                'type' => 'line',
+                'money' => true,
+                'wide' => true,
+                'labels' => $dias->map(fn ($d) => $d->format('d/m'))->all(),
+                'datasets' => [['label' => 'Ventas', 'data' => $dias->map(fn ($d) => (float) ($porDia[$d->toDateString()] ?? 0))->all()]],
+            ]);
+
+            // Fichas más vendidas en los últimos 30 días
+            $porFicha = VentaDetalle::query()
                 ->join('ventas', 'ventas.id', '=', 'venta_detalles.venta_id')
                 ->join('fichas', 'fichas.id', '=', 'venta_detalles.ficha_id')
                 ->whereNull('ventas.deleted_at')
-                ->select('fichas.denominacion', DB::raw('SUM(venta_detalles.cantidad) as cantidad'), DB::raw('SUM(venta_detalles.subtotal) as valor'))
-                ->groupBy('fichas.id', 'fichas.denominacion')
-                ->orderByDesc('cantidad')
-                ->limit(5)
+                ->whereDate('ventas.fecha_venta', '>=', now()->subDays(29)->toDateString())
+                ->select('fichas.denominacion', 'fichas.valor', DB::raw('SUM(venta_detalles.cantidad) as cantidad'))
+                ->groupBy('fichas.id', 'fichas.denominacion', 'fichas.valor')
+                ->orderBy('fichas.valor')
                 ->get();
 
+            if ($porFicha->isNotEmpty()) {
+                $charts->push([
+                    'id' => 'ventas-ficha',
+                    'title' => 'Fichas más vendidas (30 días)',
+                    'subtitle' => 'Qué denominaciones piden más los clientes.',
+                    'type' => 'doughnut',
+                    'labels' => $porFicha->pluck('denominacion')->all(),
+                    'colors' => $porFicha->map(fn ($f) => Ficha::paletaChip((float) $f->valor)[0])->all(),
+                    'datasets' => [['data' => $porFicha->pluck('cantidad')->map(fn ($c) => (int) $c)->all()]],
+                ]);
+            }
+
+            // Los 5 clientes que más han comprado
             $topClientes = Venta::query()
                 ->join('clientes', 'clientes.id', '=', 'ventas.cliente_id')
-                ->select('clientes.nombre', DB::raw('COUNT(ventas.id) as compras'), DB::raw('SUM(ventas.total) as total'))
+                ->select('clientes.nombre', DB::raw('SUM(ventas.total) as total'))
                 ->groupBy('clientes.id', 'clientes.nombre')
                 ->orderByDesc('total')
                 ->limit(5)
                 ->get();
+
+            if ($topClientes->isNotEmpty()) {
+                $charts->push([
+                    'id' => 'top-clientes',
+                    'title' => 'Top 5 clientes',
+                    'subtitle' => 'Los jugadores que más han comprado en fichas.',
+                    'type' => 'bar',
+                    'money' => true,
+                    'horizontal' => true,
+                    'labels' => $topClientes->pluck('nombre')->all(),
+                    'datasets' => [['label' => 'Comprado', 'data' => $topClientes->pluck('total')->map(fn ($t) => (float) $t)->all()]],
+                ]);
+            }
         }
 
-        // Clase 10: KPIs de compras (abastecimiento)
+        // --- Compras (abastecimiento) ---
         if ($user->can('ver-compras')) {
             $porRecibir = Compra::whereIn('estado', ['pendiente', 'parcial']);
-
-            $stats->push(['label' => 'Órdenes por recibir', 'value' => (clone $porRecibir)->count()]);
-            $stats->push(['label' => 'Valor por recibir', 'value' => '$ '.number_format((float) (clone $porRecibir)->sum('total'), 0, ',', '.')]);
+            $stats->push([
+                'label' => 'Órdenes por recibir',
+                'value' => (clone $porRecibir)->count(),
+                'hint' => $peso((clone $porRecibir)->sum('total')).' pendientes de llegar',
+                'icon' => 'clock',
+                'tone' => 'violet',
+            ]);
             $stats->push([
                 'label' => 'Comprado en el mes',
-                'value' => '$ '.number_format((float) Compra::whereNot('estado', 'anulada')->whereMonth('fecha_compra', now()->month)->whereYear('fecha_compra', now()->year)->sum('total'), 0, ',', '.'),
+                'value' => $peso(Compra::whereNot('estado', 'anulada')->whereMonth('fecha_compra', now()->month)->whereYear('fecha_compra', now()->year)->sum('total')),
+                'hint' => 'gasto en fichas a proveedores',
+                'icon' => 'truck',
+                'tone' => 'slate',
             ]);
         }
 
@@ -93,12 +201,13 @@ class DashboardController extends Controller
             : collect();
 
         return view('dashboard', [
+            'user' => $user,
             'roles' => $user->getRoleNames(),
             'modules' => $modules,
             'stats' => $stats,
-            'topFichas' => $topFichas,
-            'topClientes' => $topClientes,
+            'charts' => $charts,
             'fichasReabastecer' => $fichasReabastecer,
+            'totalMesas' => $user->can('ver-mesas') ? Mesa::count() : null,
         ]);
     }
 }

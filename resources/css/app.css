@@ -1,3 +1,26 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Color de marca por defecto (#9f1239). Los layouts lo reemplazan con el de lsa Identidad corporativa */
+:root {
+    --brand: 159 18 57;
+    --brand-dark: 119 14 43;
+    --brand-light: 245 231 235;
+    --brand-50: 248 238 241;
+    --brand-100: 241 219 225;
+    --brand-200: 228 189 200;
+    --brand-300: 212 148 166;
+    --brand-400: 195 108 132;
+    --brand-500: 180 70 101;
+    --brand-600: 169 42 77;
+    --brand-700: 159 18 57;
+    --brand-800: 135 15 48;
+    --brand-900: 111 13 40;
+    --brand-950: 80 9 29;
+}
+
+/* Alpine.js: oculta los elementos con x-cloak hasta que la página termina de cargar */
+[x-cloak] {
+    display: none !important;
+}

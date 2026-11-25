@@ -1,179 +1,154 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}" class="text-xl font-bold text-red-700">
-                        Casino Fortuna
-                    </a>
-                </div>
+{{-- ============================================================
+     MENÚ LATERAL: fijo en pantallas grandes y desplegable en celulares.
+     Cada enlace aparece solo si el usuario tiene el permiso (@can).
+     ============================================================ --}}
 
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        Dashboard
-                    </x-nav-link>
-                    @can('ver-mesas')
-                        <x-nav-link :href="route('mesas.index')" :active="request()->routeIs('mesas.*')">
-                            Mesas
-                        </x-nav-link>
-                    @endcan
-                    @can('ver-juegos')
-                        <x-nav-link :href="route('juegos.index')" :active="request()->routeIs('juegos.*')">
-                            Juegos
-                        </x-nav-link>
-                    @endcan
-                    @can('ver-clientes')
-                        <x-nav-link :href="route('clientes.index')" :active="request()->routeIs('clientes.*')">
-                            Clientes
-                        </x-nav-link>
-                    @endcan
-                    @can('ver-fichas')
-                        <x-nav-link :href="route('fichas.index')" :active="request()->routeIs('fichas.*')">
-                            Fichas
-                        </x-nav-link>
-                    @endcan
-                    @can('ver-ventas')
-                        <x-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.*')">
-                            Ventas
-                        </x-nav-link>
-                    @endcan
-                    @can('ver-proveedores')
-                        <x-nav-link :href="route('proveedores.index')" :active="request()->routeIs('proveedores.*')">
-                            Proveedores
-                        </x-nav-link>
-                    @endcan
-                    @can('ver-compras')
-                        <x-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.*')">
-                            Compras
-                        </x-nav-link>
-                    @endcan
-                    @can('ver-inventario')
-                        <x-nav-link :href="route('inventario.kardex')" :active="request()->routeIs('inventario.*')">
-                            Kardex
-                        </x-nav-link>
-                    @endcan
-                    @can('ver-auditoria')
-                        <x-nav-link :href="route('auditoria.index')" :active="request()->routeIs('auditoria.*')">
-                            Auditoría
-                        </x-nav-link>
-                    @endcan
-                </div>
-            </div>
+{{-- Fondo oscuro detrás del menú cuando se abre en el celular --}}
+<div x-cloak x-show="sidebarOpen" x-transition.opacity @click="sidebarOpen = false"
+     class="fixed inset-0 z-40 bg-black/60 lg:hidden"></div>
 
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
+<aside :class="{ '!translate-x-0': sidebarOpen }"
+       class="fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col bg-ink transition-transform duration-200 lg:translate-x-0">
 
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-        </div>
+    {{-- Marca: logo (ficha), nombre y eslogan --}}
+    <div class="flex h-24 shrink-0 items-center gap-3 px-5">
+        <a href="{{ route('dashboard') }}" class="flex min-w-0 items-center gap-3">
+            <x-brand-logo class="h-12 w-12 shrink-0" />
+            <span class="min-w-0">
+                <span class="block truncate font-display text-lg font-bold leading-tight text-gold">{{ $branding->trade_name }}</span>
+                @if ($branding->slogan)
+                    <span class="block truncate text-xs text-slate-400">{{ $branding->slogan }}</span>
+                @endif
+            </span>
+        </a>
+        <button type="button" @click="sidebarOpen = false" class="ms-auto rounded-md p-1 text-slate-400 hover:text-white lg:hidden" aria-label="Cerrar menú">
+            <x-icon name="close" class="h-6 w-6" />
+        </button>
     </div>
+    <div class="mx-5 h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent"></div>
 
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                Dashboard
-            </x-responsive-nav-link>
-            @can('ver-mesas')
-                <x-responsive-nav-link :href="route('mesas.index')" :active="request()->routeIs('mesas.*')">
-                    Mesas
-                </x-responsive-nav-link>
-            @endcan
-            @can('ver-juegos')
-                <x-responsive-nav-link :href="route('juegos.index')" :active="request()->routeIs('juegos.*')">
-                    Juegos
-                </x-responsive-nav-link>
-            @endcan
-            @can('ver-clientes')
-                <x-responsive-nav-link :href="route('clientes.index')" :active="request()->routeIs('clientes.*')">
-                    Clientes
-                </x-responsive-nav-link>
-            @endcan
-            @can('ver-fichas')
-                <x-responsive-nav-link :href="route('fichas.index')" :active="request()->routeIs('fichas.*')">
-                    Fichas
-                </x-responsive-nav-link>
-            @endcan
-            @can('ver-ventas')
-                <x-responsive-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.*')">
-                    Ventas
-                </x-responsive-nav-link>
-            @endcan
-            @can('ver-proveedores')
-                <x-responsive-nav-link :href="route('proveedores.index')" :active="request()->routeIs('proveedores.*')">
-                    Proveedores
-                </x-responsive-nav-link>
-            @endcan
-            @can('ver-compras')
-                <x-responsive-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.*')">
-                    Compras
-                </x-responsive-nav-link>
-            @endcan
-            @can('ver-inventario')
-                <x-responsive-nav-link :href="route('inventario.kardex')" :active="request()->routeIs('inventario.*')">
-                    Kardex
-                </x-responsive-nav-link>
-            @endcan
-            @can('ver-auditoria')
-                <x-responsive-nav-link :href="route('auditoria.index')" :active="request()->routeIs('auditoria.*')">
-                    Auditoría
-                </x-responsive-nav-link>
-            @endcan
+    {{-- Enlaces agrupados por área del casino --}}
+    <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4" aria-label="Menú principal">
+        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')" icon="home">
+            Inicio
+        </x-nav-link>
+
+        @canany(['ver-mesas', 'ver-juegos'])
+            <p class="px-3 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gold/70">Sala de juegos</p>
+        @endcanany
+        @can('ver-mesas')
+            <x-nav-link :href="route('mesas.index')" :active="request()->routeIs('mesas.*')" icon="table">
+                Mesas de juego
+            </x-nav-link>
+        @endcan
+        @can('ver-juegos')
+            <x-nav-link :href="route('juegos.index')" :active="request()->routeIs('juegos.*')" icon="dice">
+                Juegos
+            </x-nav-link>
+        @endcan
+
+        @canany(['ver-clientes', 'ver-ventas', 'ver-fichas', 'ver-inventario'])
+            <p class="px-3 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gold/70">Caja y clientes</p>
+        @endcanany
+        @can('ver-clientes')
+            <x-nav-link :href="route('clientes.index')" :active="request()->routeIs('clientes.*')" icon="users">
+                Clientes
+            </x-nav-link>
+        @endcan
+        @can('ver-ventas')
+            <x-nav-link :href="route('ventas.index')" :active="request()->routeIs('ventas.*')" icon="cart">
+                Venta de fichas
+            </x-nav-link>
+        @endcan
+        @can('ver-fichas')
+            <x-nav-link :href="route('fichas.index')" :active="request()->routeIs('fichas.*')" icon="chip">
+                Fichas en caja
+            </x-nav-link>
+        @endcan
+        @can('ver-inventario')
+            <x-nav-link :href="route('inventario.kardex')" :active="request()->routeIs('inventario.*')" icon="archive">
+                Kardex de fichas
+            </x-nav-link>
+        @endcan
+
+        @canany(['ver-proveedores', 'ver-compras'])
+            <p class="px-3 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gold/70">Abastecimiento</p>
+        @endcanany
+        @can('ver-proveedores')
+            <x-nav-link :href="route('proveedores.index')" :active="request()->routeIs('proveedores.*')" icon="building">
+                Proveedores
+            </x-nav-link>
+        @endcan
+        @can('ver-compras')
+            <x-nav-link :href="route('compras.index')" :active="request()->routeIs('compras.*')" icon="truck">
+                Compras de fichas
+            </x-nav-link>
+        @endcan
+
+        @canany(['ver-auditoria', 'ver-branding'])
+            <p class="px-3 pb-1 pt-5 text-[11px] font-semibold uppercase tracking-[0.18em] text-gold/70">Administración</p>
+        @endcanany
+        @can('ver-auditoria')
+            <x-nav-link :href="route('auditoria.index')" :active="request()->routeIs('auditoria.*')" icon="shield">
+                Auditoría
+            </x-nav-link>
+        @endcan
+        @can('ver-branding')
+            <x-nav-link :href="route('settings.branding.edit')" :active="request()->routeIs('settings.branding.*')" icon="swatch">
+                Identidad del casino
+            </x-nav-link>
+        @endcan
+    </nav>
+
+    {{-- Aviso de juego responsable (como en un casino real) --}}
+    <div class="border-t border-white/10 px-5 py-4">
+        <div class="flex items-center gap-3">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-gold/60 text-xs font-bold text-gold">18+</span>
+            <p class="text-[11px] leading-snug text-slate-400">Juega con responsabilidad.<br>Prohibida la entrada a menores de edad.</p>
+        </div>
+        <p class="mt-3 truncate text-[10px] text-slate-600">© {{ date('Y') }} {{ $branding->legal_name }}</p>
+    </div>
+</aside>
+
+{{-- ============================================================
+     BARRA SUPERIOR: botón del menú (celular), título de la página, fecha y usuario.
+     ============================================================ --}}
+<div class="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur lg:pl-72">
+    <div class="flex min-h-[4rem] items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+        <button type="button" @click="sidebarOpen = true" class="-ms-1 rounded-md p-1 text-slate-500 hover:text-slate-800 lg:hidden" aria-label="Abrir menú">
+            <x-icon name="menu" class="h-6 w-6" />
+        </button>
+
+        <div class="min-w-0 flex-1">
+            {{ $header ?? '' }}
         </div>
 
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-            </div>
+        <span class="hidden text-sm capitalize text-slate-500 md:block">{{ now()->translatedFormat('l j \d\e F') }}</span>
 
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
+        <x-dropdown align="right" width="48">
+            <x-slot name="trigger">
+                <button class="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pe-3 ps-1 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none">
+                    <span class="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-sm font-bold text-gold ring-1 ring-gold/60">
+                        {{ \Illuminate\Support\Str::upper(\Illuminate\Support\Str::substr(Auth::user()->name, 0, 1)) }}
+                    </span>
+                    <span class="hidden text-left leading-tight sm:block">
+                        <span class="block max-w-[10rem] truncate">{{ Auth::user()->name }}</span>
+                        <span class="block text-[11px] uppercase tracking-wide text-gold-dark">{{ Auth::user()->getRoleNames()->first() ?? 'Sin rol' }}</span>
+                    </span>
+                    <x-icon name="chevron-down" class="h-4 w-4 text-slate-400" />
+                </button>
+            </x-slot>
+
+            <x-slot name="content">
+                <x-dropdown-link :href="route('profile.edit')">Mi perfil</x-dropdown-link>
 
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
+                    <x-dropdown-link :href="route('logout')" onclick="event.preventDefault(); this.closest('form').submit();">
+                        Cerrar sesión
+                    </x-dropdown-link>
                 </form>
-            </div>
-        </div>
+            </x-slot>
+        </x-dropdown>
     </div>
-</nav>
+</div>

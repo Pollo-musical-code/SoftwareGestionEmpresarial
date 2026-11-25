@@ -10,6 +10,7 @@ use App\Http\Controllers\JuegoController;
 use App\Http\Controllers\MesaController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProveedorController;
+use App\Http\Controllers\Settings\BrandingController;
 use App\Http\Controllers\VentaController;
 use Illuminate\Support\Facades\Route;
 
@@ -60,15 +61,21 @@ Route::middleware('auth')->group(function () {
     Route::get('compras/{compra}/pdf', [CompraController::class, 'pdf'])->name('compras.pdf');
     Route::resource('compras', CompraController::class)->only(['index', 'create', 'store', 'show', 'destroy']);
 
-    // Inventario: kardex y ajustes (Clase 12)
+    // Inventario: kardex y ajustes
     Route::get('inventario/kardex', [InventarioController::class, 'kardex'])->name('inventario.kardex');
     Route::get('inventario/kardex/{ficha}/pdf', [InventarioController::class, 'pdf'])
         ->withTrashed()->name('inventario.pdf');
     Route::get('inventario/{ficha}/ajustar', [InventarioController::class, 'ajustar'])->name('inventario.ajustar');
     Route::post('inventario/{ficha}/ajustar', [InventarioController::class, 'guardarAjuste'])->name('inventario.ajustar.guardar');
 
-    // Auditoría (Clase 12)
+    // Auditoría
     Route::get('auditoria', [AuditoriaController::class, 'index'])->name('auditoria.index');
+
+    // Identidad corporativa: nombre, razón social, NIT, logo y color
+    Route::prefix('configuracion')->name('settings.')->group(function () {
+        Route::get('identidad', [BrandingController::class, 'edit'])->name('branding.edit');
+        Route::put('identidad', [BrandingController::class, 'update'])->name('branding.update');
+    });
 });
 
 require __DIR__.'/auth.php';
