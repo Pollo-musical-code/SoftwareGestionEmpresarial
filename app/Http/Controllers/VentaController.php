@@ -32,7 +32,7 @@ class VentaController extends Controller implements HasMiddleware
                 $search = '%'.$request->string('search').'%';
                 $q->where(function ($q) use ($search) {
                     $q->where('numero_factura', 'like', $search)
-                      ->orWhereHas('cliente', fn ($q) => $q->where('nombre', 'like', $search));
+                        ->orWhereHas('cliente', fn ($q) => $q->where('nombre', 'like', $search));
                 });
             })
             ->when($request->filled('from'), fn ($q) => $q->whereDate('fecha_venta', '>=', $request->input('from')))

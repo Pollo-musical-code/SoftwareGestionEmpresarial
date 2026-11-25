@@ -98,7 +98,8 @@
                 Identidad del casino
             </x-nav-link>
         @endcan
-    </nav>
+        @include('partials.menu-extra')
+</nav>
 
     {{-- Aviso de juego responsable (como en un casino real) --}}
     <div class="border-t border-white/10 px-5 py-4">

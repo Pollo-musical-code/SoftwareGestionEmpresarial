@@ -34,8 +34,8 @@ class CompraController extends Controller implements HasMiddleware
                 $search = '%'.$request->string('search').'%';
                 $q->where(function ($q) use ($search) {
                     $q->where('numero_compra', 'like', $search)
-                      ->orWhere('factura_proveedor', 'like', $search)
-                      ->orWhereHas('proveedor', fn ($q) => $q->where('nombre', 'like', $search));
+                        ->orWhere('factura_proveedor', 'like', $search)
+                        ->orWhereHas('proveedor', fn ($q) => $q->where('nombre', 'like', $search));
                 });
             })
             ->when($request->filled('estado'), fn ($q) => $q->where('estado', $request->input('estado')))

@@ -63,7 +63,7 @@ class CompraService
     /**
      * Registra la RECEPCIÓN (total o parcial) y AUMENTA el stock por el kardex.
      *
-     * @param array $cantidades [id_del_detalle => cantidad_que_llega, ...]
+     * @param  array  $cantidades  [id_del_detalle => cantidad_que_llega, ...]
      */
     public function recibir(Compra $compra, array $cantidades, ?string $facturaProveedor = null): Compra
     {

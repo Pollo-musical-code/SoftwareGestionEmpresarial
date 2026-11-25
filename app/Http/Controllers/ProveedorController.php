@@ -32,8 +32,8 @@ class ProveedorController extends Controller implements HasMiddleware
                 $search = '%'.$request->string('search').'%';
                 $q->where(function ($q) use ($search) {
                     $q->where('nombre', 'like', $search)
-                      ->orWhere('numero_documento', 'like', $search)
-                      ->orWhere('contacto', 'like', $search);
+                        ->orWhere('numero_documento', 'like', $search)
+                        ->orWhere('contacto', 'like', $search);
                 });
             })
             ->when($request->filled('estado'), fn ($q) => $q->where('activo', $request->input('estado') === 'activo'))

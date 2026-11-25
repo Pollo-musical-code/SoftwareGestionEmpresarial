@@ -17,8 +17,8 @@ class VentaService
     /**
      * Registra una venta completa dentro de una transacción.
      *
-     * @param array $data ['cliente_id' => int, 'fecha_venta' => 'Y-m-d', 'notas' => string,
-     *                     'items' => [['ficha_id' => int, 'cantidad' => int], ...]]
+     * @param  array  $data  ['cliente_id' => int, 'fecha_venta' => 'Y-m-d', 'notas' => string,
+     *                       'items' => [['ficha_id' => int, 'cantidad' => int], ...]]
      */
     public function registrar(array $data, int $userId): Venta
     {

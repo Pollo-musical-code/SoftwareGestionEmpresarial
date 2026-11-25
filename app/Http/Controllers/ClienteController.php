@@ -26,13 +26,13 @@ class ClienteController extends Controller implements HasMiddleware
         $showTrashed = $request->boolean('trashed') && $request->user()->can('eliminar-clientes');
 
         $clientes = Cliente::query()
-        ->withCount('ventas')
+            ->withCount('ventas')
             ->when($showTrashed, fn ($q) => $q->onlyTrashed())
             ->when($request->filled('search'), function ($q) use ($request) {
                 $search = '%'.$request->string('search').'%';
                 $q->where(function ($q) use ($search) {
                     $q->where('nombre', 'like', $search)
-                      ->orWhere('documento', 'like', $search);
+                        ->orWhere('documento', 'like', $search);
                 });
             })
             ->when($request->filled('nivel'), fn ($q) => $q->where('nivel_vip', $request->input('nivel')))
@@ -75,7 +75,7 @@ class ClienteController extends Controller implements HasMiddleware
             ->with('success', 'Cliente actualizado exitosamente.');
     }
 
-        public function destroy(Cliente $cliente)
+    public function destroy(Cliente $cliente)
     {
         // Regla de negocio: no se puede eliminar un cliente con ventas asociadas
         if ($cliente->ventas()->exists()) {
